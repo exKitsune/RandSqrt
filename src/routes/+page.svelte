@@ -84,7 +84,24 @@
 </script>
 
 <main class="container">
-	<h1>Square Root Approximation via Random Numbers</h1>
+	<header class="intro">
+		<h1>Random Number Square Root Approximation</h1>
+
+		<div class="explanation">
+			<p>
+				This visualization demonstrates how we can approximate square roots using random numbers,
+				based on an interesting probability relationship explained in
+				<a href="https://youtu.be/Pny70rNPJLk" target="_blank" rel="noopener">3Blue1Brown's video</a
+				>.
+			</p>
+
+			<p>
+				The key insight is that P(max(x₁, x₂) ≤ R) = P(√(rand(0,1)) ≤ R) = P(rand(0,1) ≤ R²) = R².
+				Therefore, if we generate many random point pairs and take the lower R² portion of them, the
+				maximum values of these pairs will approximate √(R²).
+			</p>
+		</div>
+	</header>
 
 	<div class="controls">
 		<label>
@@ -114,6 +131,43 @@
 		max-width: 800px;
 		margin: 0 auto;
 		padding: 20px;
+		font-family:
+			system-ui,
+			-apple-system,
+			sans-serif;
+	}
+
+	.intro {
+		text-align: center;
+		margin-bottom: 2rem;
+	}
+
+	h1 {
+		color: #2c3e50;
+		margin-bottom: 1.5rem;
+	}
+
+	.explanation {
+		max-width: 600px;
+		margin: 0 auto;
+		line-height: 1.6;
+		color: #34495e;
+		background: #f8f9fa;
+		padding: 1.5rem;
+		border-radius: 8px;
+	}
+
+	.explanation p {
+		margin: 0.8rem 0;
+	}
+
+	.explanation a {
+		color: #3498db;
+		text-decoration: none;
+	}
+
+	.explanation a:hover {
+		text-decoration: underline;
 	}
 
 	.controls {
