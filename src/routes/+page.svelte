@@ -8,24 +8,56 @@
 	let points: Array<{ x: number; y: number; max: number; selected: boolean }> = [];
 	let approximatedSqrt = 0;
 	let actualSqrt = Math.sqrt(targetValue);
+	let histogramDiv: HTMLDivElement;
+
+	let tempTargetValue = targetValue;
+	let tempNumPoints = numPoints;
+
+	// Convert between linear slider (0-1) and exponential points (100-10000)
+	function sliderToPoints(val: number): number {
+		return Math.round(Math.pow(10, 2 + val * 2)); // Maps 0-1 to 100-10000
+	}
+
+	function pointsToSlider(points: number): number {
+		return (Math.log10(points) - 2) / 2; // Maps 100-10000 to 0-1
+	}
+
+	function handlePointsInput() {
+		numPoints = Math.max(100, Math.min(10000, tempNumPoints));
+		tempNumPoints = numPoints;
+		generatePoints();
+	}
+
+	function handleTargetInput() {
+		targetValue = Math.max(0, Math.min(1, tempTargetValue));
+		tempTargetValue = targetValue;
+		generatePoints();
+	}
 
 	function generatePoints() {
-		// Generate random points
-		points = Array.from({ length: numPoints }, () => {
-			const x = Math.random();
-			const y = Math.random();
-			return {
-				x,
-				y,
-				max: Math.max(x, y),
-				selected: false
-			};
-		});
+		// Generate points in chunks to prevent UI freezing
+		const chunkSize = 1000;
+		const newPoints = [];
 
-		// Sort points by max value and determine selection
-		points.sort((a, b) => a.max - b.max);
-		const cutoffIndex = Math.floor(points.length * Math.sqrt(targetValue));
-		points = points.map((p, i) => ({
+		for (let i = 0; i < numPoints; i += chunkSize) {
+			const chunk = Array.from({ length: Math.min(chunkSize, numPoints - i) }, () => {
+				const x = Math.random();
+				const y = Math.random();
+				return {
+					x,
+					y,
+					max: Math.max(x, y)
+				};
+			});
+			newPoints.push(...chunk);
+		}
+
+		// Sort points by max value
+		newPoints.sort((a, b) => a.max - b.max);
+
+		// Determine selection in a single pass
+		const cutoffIndex = Math.floor(newPoints.length * targetValue);
+		points = newPoints.map((p, i) => ({
 			...p,
 			selected: i <= cutoffIndex
 		}));
@@ -37,11 +69,14 @@
 	}
 
 	function updatePlot() {
-		if (!plotDiv) return;
+		if (!plotDiv || !histogramDiv) return;
 
-		const plot = Plot.plot({
-			width: 600,
-			height: 600,
+		const plotWidth = 600;
+
+		// Create scatter plot
+		const scatterPlot = Plot.plot({
+			width: plotWidth,
+			height: plotWidth,
 			grid: true,
 			x: { domain: [0, 1] },
 			y: { domain: [0, 1] },
@@ -63,12 +98,76 @@
 						stroke: 'green',
 						strokeDasharray: '4 4'
 					}
+				),
+				Plot.line(
+					[
+						[0, approximatedSqrt],
+						[approximatedSqrt, approximatedSqrt],
+						[approximatedSqrt, 0]
+					],
+					{
+						stroke: 'red',
+						strokeDasharray: '4 4'
+					}
 				)
 			]
 		});
 
+		// Create CDF data
+		const cdfPoints = points
+			.map((p) => p.max)
+			.sort((a, b) => a - b)
+			.map((max, index) => ({
+				x: max,
+				y: (index + 1) / points.length
+			}));
+
+		// Create CDF plot
+		const histogramPlot = Plot.plot({
+			width: plotWidth,
+			height: plotWidth * 0.4,
+			grid: true,
+			x: { domain: [0, 1], label: 'x' },
+			y: {
+				domain: [0, 1],
+				label: 'Proportion of points where max(x,y) ≤ x',
+				grid: true
+			},
+			marks: [
+				Plot.areaY(
+					cdfPoints.filter((p) => p.x <= approximatedSqrt),
+					{
+						x: 'x',
+						y: 'y',
+						fill: 'rgba(255, 0, 0, 0.2)'
+					}
+				),
+				Plot.line(cdfPoints, {
+					x: 'x',
+					y: 'y',
+					stroke: 'steelblue',
+					strokeWidth: 2
+				}),
+				Plot.ruleX([actualSqrt], {
+					stroke: 'green',
+					strokeDasharray: '4 4'
+				}),
+				Plot.ruleX([approximatedSqrt], {
+					stroke: 'red',
+					strokeDasharray: '4 4'
+				}),
+				Plot.ruleY([targetValue], {
+					stroke: '#666',
+					strokeDasharray: '2 2'
+				})
+			]
+		});
+
+		// Clear and append plots
 		plotDiv.innerHTML = '';
-		plotDiv.appendChild(plot);
+		histogramDiv.innerHTML = '';
+		plotDiv.appendChild(scatterPlot);
+		histogramDiv.appendChild(histogramPlot);
 	}
 
 	$: {
@@ -104,20 +203,98 @@
 	</header>
 
 	<div class="controls">
-		<label>
-			Target value (R²):
-			<input type="number" bind:value={targetValue} min="0" max="1" step="0.01" />
-		</label>
+		<div class="control-group">
+			<label>
+				Target value (R²):
+				<div class="input-group">
+					<input
+						type="range"
+						min="0"
+						max="1"
+						step="0.01"
+						bind:value={targetValue}
+						on:change={() => {
+							tempTargetValue = targetValue;
+							generatePoints();
+						}}
+					/>
+					<input type="number" bind:value={tempTargetValue} min="0" max="1" step="0.01" />
+				</div>
+			</label>
+		</div>
 
-		<label>
-			Number of points:
-			<input type="number" bind:value={numPoints} min="100" max="10000" step="100" />
-		</label>
+		<div class="control-group">
+			<label>
+				Number of points:
+				<div class="input-group">
+					<input
+						type="range"
+						min="0"
+						max="1"
+						step="0.01"
+						value={pointsToSlider(numPoints)}
+						on:change={(e) => {
+							numPoints = sliderToPoints(parseFloat(e.currentTarget.value));
+							tempNumPoints = numPoints;
+							generatePoints();
+						}}
+					/>
+					<input type="number" bind:value={tempNumPoints} min="100" max="10000" step="100" />
+				</div>
+			</label>
+		</div>
 
-		<button on:click={generatePoints}> Generate New Points </button>
+		<button on:click={generatePoints}>Generate New Points</button>
 	</div>
 
-	<div class="visualization" bind:this={plotDiv}></div>
+	<div class="plots-container">
+		<div class="plots">
+			<div class="plot-group">
+				<div class="visualization" bind:this={plotDiv}></div>
+				<div class="legend">
+					<h3>Scatter Plot Legend</h3>
+					<div class="legend-item">
+						<span class="color-dot" style="background: red; opacity: 0.6"></span>
+						<span>Points where max(x,y) ≤ R</span>
+					</div>
+					<div class="legend-item">
+						<span class="color-dot" style="background: blue; opacity: 0.6"></span>
+						<span>Points where max(x,y) > R</span>
+					</div>
+					<div class="legend-item">
+						<span class="color-line" style="background: green"></span>
+						<span>Actual √(R²)</span>
+					</div>
+					<div class="legend-item">
+						<span class="color-line" style="background: red"></span>
+						<span>Approximated √(R²)</span>
+					</div>
+				</div>
+			</div>
+			<div class="plot-group">
+				<div class="histogram" bind:this={histogramDiv}></div>
+				<div class="legend">
+					<h3>Distribution Legend</h3>
+					<div class="legend-item">
+						<span class="color-dot" style="background: steelblue"></span>
+						<span>Cumulative proportion of points where max(x,y) ≤ x</span>
+					</div>
+					<div class="legend-item">
+						<div class="color-area"></div>
+						<span>Points where max(x,y) ≤ approximated √(R²)</span>
+					</div>
+					<div class="legend-item">
+						<span class="color-line" style="background: green"></span>
+						<span>Actual √(R²)</span>
+					</div>
+					<div class="legend-item">
+						<span class="color-line" style="background: red"></span>
+						<span>Approximated √(R²)</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<div class="stats">
 		<p>Approximated √(R²): {approximatedSqrt.toFixed(4)}</p>
@@ -128,13 +305,88 @@
 
 <style>
 	.container {
-		max-width: 800px;
+		width: 100%;
 		margin: 0 auto;
 		padding: 20px;
 		font-family:
 			system-ui,
 			-apple-system,
 			sans-serif;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.plots-container {
+		width: 100%;
+		display: flex;
+		justify-content: center;
+	}
+
+	.plots {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+	}
+
+	.plot-group {
+		display: flex;
+		gap: 20px;
+		align-items: flex-start;
+	}
+
+	.legend {
+		background: #f8f9fa;
+		padding: 20px;
+		border-radius: 8px;
+		border: 1px solid #dee2e6;
+		min-width: 200px;
+	}
+
+	.legend h3 {
+		margin: 0 0 15px 0;
+		color: #343a40;
+		font-size: 0.9rem;
+	}
+
+	.legend-item {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 12px;
+		font-size: 0.9rem;
+	}
+
+	.color-dot {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.color-line {
+		width: 20px;
+		height: 2px;
+		position: relative;
+		flex-shrink: 0;
+	}
+
+	.color-line::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: inherit;
+		border-top: 2px dashed currentColor;
+	}
+
+	.color-area {
+		width: 20px;
+		height: 12px;
+		background: rgba(255, 0, 0, 0.2);
+		flex-shrink: 0;
 	}
 
 	.intro {
@@ -173,32 +425,48 @@
 	.controls {
 		margin: 20px 0;
 		display: flex;
-		gap: 1rem;
+		gap: 1.5rem;
+		align-items: flex-start;
+		flex-wrap: wrap;
+	}
+
+	.control-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.input-group {
+		display: flex;
 		align-items: center;
+		gap: 1rem;
 	}
 
-	.visualization {
-		border: 1px solid #ccc;
-		margin: 20px 0;
-		padding: 10px;
+	input[type='range'] {
+		width: 200px;
 	}
 
-	input {
+	input[type='number'] {
 		width: 100px;
-		margin: 0 10px;
+	}
+
+	label {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 	}
 
 	button {
-		padding: 8px 16px;
-		background: #4caf50;
-		color: white;
-		border: none;
-		border-radius: 4px;
-		cursor: pointer;
+		align-self: flex-end;
 	}
 
-	button:hover {
-		background: #45a049;
+	.visualization,
+	.histogram {
+		width: 620px;
+		border: 1px solid #ccc;
+		padding: 10px;
+		display: flex;
+		justify-content: center;
 	}
 
 	.stats {
