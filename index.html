@@ -5,45 +5,31 @@
 		<link rel="icon" href="./favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		
-		<link href="./_app/immutable/assets/2.BlKGi3oa.css" rel="stylesheet">
-		<link rel="modulepreload" href="./_app/immutable/entry/start.CjEMHZyR.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/entry.9dz2cFr2.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/runtime.BMPVj7jq.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/app.ByjZxUgN.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/render.BN3izumn.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/disclose-version.UM9HsxZY.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/index-client.BjJDsRfE.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/store.CBJXi524.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/0.D7UI1Ma8.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/2.Bb_T9i7P.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/legacy.-7Rt7AFK.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.YTjNxPTr.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/entry.DC7G10Fz.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/runtime.CvROAZ4Y.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.Ciyf3A0A.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/render.hiniec3c.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/disclose-version.rmtXnb8y.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index-client.Ck5zYekP.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/store.DhlUb1Ov.js">
 	</head>
 	<body data-sveltekit-preload-data="hover">
-		<div style="display: contents"><!--[--><!--[--><!----><!----><main class="container svelte-1jr0mym"><header class="intro svelte-1jr0mym"><h1 class="svelte-1jr0mym">Random Number Square Root Approximation</h1> <div class="explanation svelte-1jr0mym"><p class="svelte-1jr0mym">This visualization demonstrates how we can approximate square roots using random numbers,
-				based on an interesting probability relationship explained in <a href="https://youtu.be/Pny70rNPJLk" target="_blank" rel="noopener" class="svelte-1jr0mym">3Blue1Brown's video</a>.</p> <p class="svelte-1jr0mym">The key insight is that P(max(x₁, x₂) ≤ R) = P(√(rand(0,1)) ≤ R) = P(rand(0,1) ≤ R²) = R².
-				Therefore, if we generate many random point pairs and take the lower R² portion of them, the
-				maximum values of these pairs will approximate √(R²).</p></div></header> <div class="controls svelte-1jr0mym"><label>Target value (R²): <input type="number" value="0.5" min="0" max="1" step="0.01" class="svelte-1jr0mym"></label> <label>Number of points: <input type="number" value="1000" min="100" max="10000" step="100" class="svelte-1jr0mym"></label> <button class="svelte-1jr0mym">Generate New Points</button></div> <div class="visualization svelte-1jr0mym"></div> <div class="stats svelte-1jr0mym"><p>Approximated √(R²): 0.0000</p> <p>Actual √(R²): 0.7071</p> <p>Error: 0.7071</p></div></main><!----><!----><!----><!--]--> <!--[!--><!--]--><!--]-->
-			
+		<div style="display: contents">
 			<script>
 				{
-					__sveltekit_1s2kgvu = {
-						base: new URL(".", location).pathname.slice(0, -1)
+					__sveltekit_1o0aa0h = {
+						base: new URL(".", location).pathname.slice(0, -1),
+						assets: "/RandSqrt"
 					};
 
 					const element = document.currentScript.parentElement;
 
-					const data = [null,{"type":"data","data":null,"uses":{}}];
-
 					Promise.all([
-						import("./_app/immutable/entry/start.CjEMHZyR.js"),
-						import("./_app/immutable/entry/app.ByjZxUgN.js")
+						import("./_app/immutable/entry/start.YTjNxPTr.js"),
+						import("./_app/immutable/entry/app.Ciyf3A0A.js")
 					]).then(([kit, app]) => {
-						kit.start(app, element, {
-							node_ids: [0, 2],
-							data,
-							form: null,
-							error: null
-						});
+						kit.start(app, element);
 					});
 				}
 			</script>
